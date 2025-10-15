@@ -51,21 +51,41 @@ type KubeConfig struct {
 	// which the kueue controller manager is running. The config should be stored in the "kubeconfig" key.
 	// +kubebuilder:validation:MaxLength=256
 	// +kubebuilder:validation:MinLength=1
-	// +required
-	Location string `json:"location,omitempty"`
+	// +optional
+	Location string `json:"location,omitempty"` //nolint:kubeapilinter // should not be a pointer
 
 	// locationType of the KubeConfig.
 	//
 	// +kubebuilder:default=Secret
-	// +optional
 	// +kubebuilder:validation:Enum=Secret;Path
-	LocationType LocationType `json:"locationType"`
+	// +optional
+	LocationType LocationType `json:"locationType,omitempty"` //nolint:kubeapilinter // should not be a pointer
 }
+
+type ClusterProfile struct {
+	// name of the ClusterProfile.
+	// +kubebuilder:validation:MaxLength=256
+	// +kubebuilder:validation:MinLength=1
+	// +optional
+	Name string `json:"name,omitempty"` //nolint:kubeapilinter // should not be a pointer
+
+	// namespace of the ClusterProfile.
+	// +kubebuilder:validation:MaxLength=256
+	// +kubebuilder:validation:MinLength=1
+	// +optional
+	Namespace string `json:"namespace,omitempty"` //nolint:kubeapilinter // should not be a pointer
+}
+
+// +kubebuilder:validation:ExactlyOneOf=kubeConfig;clusterProfile
 
 type MultiKueueClusterSpec struct {
 	// kubeConfig is information on how to connect to the cluster.
-	// +required
-	KubeConfig KubeConfig `json:"kubeConfig,omitempty,omitzero"`
+	// +optional
+	KubeConfig *KubeConfig `json:"kubeConfig,omitempty,omitzero"`
+
+	// clusterProfile is the ClusterProfile to use to connect to the cluster.
+	// +optional
+	ClusterProfile *ClusterProfile `json:"clusterProfile,omitempty"`
 }
 
 type MultiKueueClusterStatus struct {

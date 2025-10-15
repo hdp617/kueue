@@ -198,6 +198,20 @@ spec:
             spec:
               description: spec is the specification of the MultiKueueCluster.
               properties:
+                clusterProfile:
+                  description: clusterProfile is the ClusterProfile to use to connect to the cluster.
+                  properties:
+                    name:
+                      description: name of the ClusterProfile.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    namespace:
+                      description: namespace of the ClusterProfile.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                  type: object
                 kubeConfig:
                   description: kubeConfig is information on how to connect to the cluster.
                   properties:
@@ -217,12 +231,11 @@ spec:
                         - Secret
                         - Path
                       type: string
-                  required:
-                    - location
                   type: object
-              required:
-                - kubeConfig
               type: object
+              x-kubernetes-validations:
+                - message: exactly one of the fields in [kubeConfig clusterProfile] must be set
+                  rule: '[has(self.kubeConfig),has(self.clusterProfile)].filter(x,x==true).size() == 1'
             status:
               description: status is the status of the MultiKueueCluster.
               properties:

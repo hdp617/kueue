@@ -208,6 +208,12 @@ const (
 	//
 	// Enables reclaimable pods counting towards quota.
 	ReclaimablePods featuregate.Feature = "ReclaimablePods"
+
+	// owner: @hdp617
+	// kep: https://github.com/kubernetes-sigs/kueue/tree/main/keps/693-multikueue
+	//
+	// Enables ClusterProfile integration for MultiKueue.
+	MultiKueueClusterProfile featuregate.Feature = "MultiKueueClusterProfile"
 )
 
 func init() {
@@ -325,6 +331,10 @@ var defaultVersionedFeatureGates = map[featuregate.Feature]featuregate.Versioned
 	},
 	ReclaimablePods: {
 		{Version: version.MustParse("0.15"), Default: true, PreRelease: featuregate.Beta},
+	},
+
+	MultiKueueClusterProfile: {
+		{Version: version.MustParse("0.15"), Default: false, PreRelease: featuregate.Alpha},
 	},
 }
 

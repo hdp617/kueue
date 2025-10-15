@@ -85,6 +85,33 @@ connection.</p>
 </tbody>
 </table>
 
+## `ClusterProfiles`     {#config-kueue-x-k8s-io-v1beta2-ClusterProfiles}
+    
+
+**Appears in:**
+
+- [MultiKueue](#config-kueue-x-k8s-io-v1beta2-MultiKueue)
+
+
+<p>ClusterProfiles defines configuration for using ClusterProfiles in MultiKueue.</p>
+
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr><td><code>credentialsProvider</code> <B>[Required]</B><br/>
+<a href="#config-kueue-x-k8s-io-v1beta2-CredentialsProvider"><code>CredentialsProvider</code></a>
+</td>
+<td>
+   <p>CredentialsProvider defines configuration for providing credentials
+to access worker clusters using ClusterProfiles.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `ControllerConfigurationSpec`     {#config-kueue-x-k8s-io-v1beta2-ControllerConfigurationSpec}
     
 
@@ -309,6 +336,33 @@ It is used to set webhook.Server.Host.</p>
 if not set, webhook server would look up the server key and certificate in
 {TempDir}/k8s-webhook-server/serving-certs. The server key and certificate
 must be named tls.key and tls.crt, respectively.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CredentialsProvider`     {#config-kueue-x-k8s-io-v1beta2-CredentialsProvider}
+    
+
+**Appears in:**
+
+- [ClusterProfiles](#config-kueue-x-k8s-io-v1beta2-ClusterProfiles)
+
+
+<p>CredentialsProvider defines configuration for providing credentials
+to access worker clusters using ClusterProfiles.</p>
+
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr><td><code>providers</code> <B>[Required]</B><br/>
+<a href="#config-kueue-x-k8s-io-v1beta2-Provider"><code>[]Provider</code></a>
+</td>
+<td>
+   <p>Providers is a list of credential providers for the ClusterProfile.</p>
 </td>
 </tr>
 </tbody>
@@ -575,6 +629,13 @@ by the generic MultiKueue adapter. Each entry defines how to handle a specific
 GroupVersionKind (GVK) for MultiKueue operations.</p>
 </td>
 </tr>
+<tr><td><code>clusterProfiles</code><br/>
+<a href="#config-kueue-x-k8s-io-v1beta2-ClusterProfiles"><code>ClusterProfiles</code></a>
+</td>
+<td>
+   <p>ClusterProfiles defines configuration for using ClusterProfiles.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -643,6 +704,39 @@ A nil value disables automatic deletion of Workloads.</p>
 
 
 
+
+## `Provider`     {#config-kueue-x-k8s-io-v1beta2-Provider}
+    
+
+**Appears in:**
+
+- [CredentialsProvider](#config-kueue-x-k8s-io-v1beta2-CredentialsProvider)
+
+
+<p>Provider defines a provider of credentials for a ClusterProfile.</p>
+
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr><td><code>name</code> <B>[Required]</B><br/>
+<code>string</code>
+</td>
+<td>
+   <p>Name is the name of the provider.</p>
+</td>
+</tr>
+<tr><td><code>execConfig</code> <B>[Required]</B><br/>
+<code>k8s.io/client-go/tools/clientcmd/api.ExecConfig</code>
+</td>
+<td>
+   <p>ExecConfig is the exec configuration to obtain credentials.</p>
+</td>
+</tr>
+</tbody>
+</table>
 
 ## `RequeuingStrategy`     {#config-kueue-x-k8s-io-v1beta2-RequeuingStrategy}
     

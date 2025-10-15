@@ -56,12 +56,12 @@ a single cluster.
 and most of integrations.
 * Allow to upgrade single cluster Kueue deployments to multicluster without
 much hassle.
-* Automatically detect and configure new clusters.
 
 ### Non-Goals
 * Solve storage problem. It is assumed that the distributed jobs are
 either location-flexible (for a subset of clusters) or are copying the 
 data as a part of the startup process.
+* Automatically detect and configure new clusters.
 * Synchronize configuration across the clusters. It is expected that the 
 user will create the appropriate objects, roles and permissions
 in the clusters (manually, using gitops or some 3rd-party tooling).
@@ -195,11 +195,13 @@ type MultiKueueClusterSpec struct {
     // Exactly one of KubeConfig or ClusterProfile must be specified.
 
     // KubeConfig is the direct specification of the kubeconfig for the remote cluster.
+    // This field can only be configured when ClusterProfile is not specified.
     // +optional
     KubeConfig *KubeConfig `json:"kubeConfig,omitempty"`
 
     // ClusterProfile is a reference to a ClusterProfile object.
     // The controller will use the information from the ClusterProfile to connect to the remote cluster.
+    // This field can only be configured when KubeConfig is not specified.
     // +optional
     ClusterProfile *ClusterProfile `json:"clusterProfile,omitempty"`
 }
@@ -249,17 +251,23 @@ The controller obtains cluster credentials based on the `MultiKueueCluster` spec
   whenever the underlying kubeconfig (e.g., in a Secret) is refreshed, the client
   is recreated.
 
-- When `clusterProfile` is referenced, the controller uses the credential provider
-  plugin mechanism, as described in [KEP-5339](https://github.com/kubernetes/enhancements/blob/master/keps/sig-multicluster/5339-clusterprofile-plugin-credentials/README.md),
-  to obtain and refresh credentials. It reads the referenced `ClusterProfile` object
-  as needed to get the provider configuration.
+- When `clusterProfile` is provided, the controller relies on the
+  [client-go credential plugin mechanism](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#client-go-credential-plugins) to obtain and refresh credentials for the remote cluster as described in [KEP-5339](https://github.com/kubernetes/enhancements/blob/master/keps/sig-multicluster/5339-clusterprofile-plugin-credentials/README.md).
+
+  The authentication flow is as follows:
+  1. The controller reads the `ClusterProfile` object referenced by the `MultiKueueCluster`. The `ClusterProfile` contains a list of credential providers.
+  2. The controller uses this configuration to invoke the corresponding credential plugin binary.
+  3. The plugin is responsible for the actual authentication process. This might involve calling an external HTTP endpoint (e.g., a cloud provider's metadata service or an OIDC provider) to generate a short-lived authentication token. The details of this process are specific to the plugin and are opaque to Kueue. It returns the credentials, including the token, to the controller.
+  4. The controller uses these credentials to configure a Kubernetes client for the worker cluster.
+
+  Token refreshing is also managed automatically by the client-go library. When a token is expired or about to expire, client-go re-invokes the plugin to fetch a new one.
 
 Creation of kubeconfig files or ClusterProfile objects is outside of the MultiKueue scope, and is cloud
 provider/environment dependent.
 
 #### ClusterProfile Controller
 
-Will monitor `ClusterProfile` objects and manage the lifecycle of their corresponding `MultiKueueCluster` objects. This controller allows administrators to make worker clusters available to MultiKueue simply by creating `ClusterProfile` objects. It ensures a `MultiKueueCluster` is created for each relevant `ClusterProfile` and kept in sync. When a `ClusterProfile` is deleted, the controller also removes the corresponding `MultiKueueCluster`.
+Will monitor `ClusterProfile` objects and create/update their corresponding `MultiKueueCluster` objects. This controller allows administrators to make worker clusters available to MultiKueue simply by creating `ClusterProfile` objects. It ensures a `MultiKueueCluster` is created for each relevant `ClusterProfile` and kept in sync with any changes. The lifecycle of the `MultiKueueCluster` is independent of the `ClusterProfile` after creation; deleting a `ClusterProfile` will not result in the deletion of the corresponding `MultiKueueCluster`.
 
 #### AdmissionCheck Controller
 
