@@ -804,6 +804,37 @@ policy can be preempted by the borrowing workload.</p>
 
 
 
+## `ClusterProfile`     {#kueue-x-k8s-io-v1beta1-ClusterProfile}
+    
+
+**Appears in:**
+
+- [MultiKueueClusterSpec](#kueue-x-k8s-io-v1beta1-MultiKueueClusterSpec)
+
+
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr><td><code>name</code> <B>[Required]</B><br/>
+<code>string</code>
+</td>
+<td>
+   <p>Name of the ClusterProfile.</p>
+</td>
+</tr>
+<tr><td><code>namespace</code> <B>[Required]</B><br/>
+<code>string</code>
+</td>
+<td>
+   <p>Namespace of the ClusterProfile.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `ClusterQueuePendingWorkload`     {#kueue-x-k8s-io-v1beta1-ClusterQueuePendingWorkload}
     
 
@@ -1875,11 +1906,18 @@ Deprecated: Flavors is deprecated and marked for removal in v1beta2.</p>
 <tbody>
     
   
-<tr><td><code>kubeConfig</code> <B>[Required]</B><br/>
+<tr><td><code>kubeConfig</code><br/>
 <a href="#kueue-x-k8s-io-v1beta1-KubeConfig"><code>KubeConfig</code></a>
 </td>
 <td>
    <p>kubeConfig is information on how to connect to the cluster.</p>
+</td>
+</tr>
+<tr><td><code>clusterProfile</code><br/>
+<a href="#kueue-x-k8s-io-v1beta1-ClusterProfile"><code>ClusterProfile</code></a>
+</td>
+<td>
+   <p>clusterProfile is the ClusterProfile to use to connect to the cluster.</p>
 </td>
 </tr>
 </tbody>

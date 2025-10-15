@@ -26,9 +26,9 @@ controllerManager:
     priorityClassName:
     image:
       # -- ControllerManager's image repository
-      repository: us-central1-docker.pkg.dev/k8s-staging-images/kueue/kueue
+      repository: us-central1-docker.pkg.dev/huypham-gke-dev/kueue/kueue
       # -- ControllerManager's image tag
-      tag: main
+      tag: clusterprofile-poc
       # -- ControllerManager's image pullPolicy.
       # This should be set to 'IfNotPresent' for released version
       pullPolicy: Always
@@ -240,9 +240,9 @@ kueueViz:
       tlsSecretName: "kueueviz-backend-tls"
     image:
       # -- KueueViz dashboard backend image repository
-      repository: "us-central1-docker.pkg.dev/k8s-staging-images/kueue/kueueviz-backend"
+      repository: "us-central1-docker.pkg.dev/huypham-gke-dev/kueue/kueueviz-backend"
       # -- KueueViz dashboard backend image tag
-      tag: main
+      tag: clusterprofile-poc
       # -- KueueViz dashboard backend image pullPolicy.
       # This should be set to 'IfNotPresent' for released version
       pullPolicy: Always
@@ -273,9 +273,9 @@ kueueViz:
       tlsSecretName: "kueueviz-frontend-tls"
     image:
       # -- KueueViz dashboard frontend image repository
-      repository: "us-central1-docker.pkg.dev/k8s-staging-images/kueue/kueueviz-frontend"
+      repository: "us-central1-docker.pkg.dev/huypham-gke-dev/kueue/kueueviz-frontend"
       # -- KueueViz dashboard frontend image tag
-      tag: main
+      tag: clusterprofile-poc
       # -- KueueViz dashboard frontend image pullPolicy.
       # This should be set to 'IfNotPresent' for released version
       pullPolicy: Always

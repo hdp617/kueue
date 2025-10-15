@@ -37,6 +37,7 @@ require (
 	k8s.io/kubectl v0.34.1
 	k8s.io/metrics v0.34.1
 	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
+	sigs.k8s.io/cluster-inventory-api v0.0.0-20250905200926-6d9c0fd21edd
 	sigs.k8s.io/controller-runtime v0.22.3
 	sigs.k8s.io/jobset v0.10.1
 	sigs.k8s.io/lws v0.7.0

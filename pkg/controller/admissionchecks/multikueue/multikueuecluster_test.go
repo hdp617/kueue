@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/utils/ptr"
@@ -55,6 +56,58 @@ import (
 var (
 	errInvalidConfig = errors.New("invalid kubeconfig")
 	errCannotWatch   = errors.New("client cannot watch")
+
+	validKubeconfig = `
+apiVersion: v1
+clusters:
+- cluster:
+    server: https://kubernetes.default.svc
+  name: test
+contexts:
+- context:
+    cluster: test
+    user: test
+  name: test
+current-context: test
+kind: Config
+users:
+- name: test
+  user: {}
+`
+	invalidKubeconfig = `
+apiVersion: v1
+clusters:
+- cluster:
+    server: invalid
+  name: test
+contexts:
+- context:
+    cluster: test
+    user: test
+  name: test
+current-context: test
+kind: Config
+users:
+- name: test
+  user: {}
+`
+	nowatchKubeconfig = `
+apiVersion: v1
+clusters:
+- cluster:
+    server: nowatch
+  name: test
+contexts:
+- context:
+    cluster: test
+    user: test
+  name: test
+current-context: test
+kind: Config
+users:
+- name: test
+  user: {}
+`
 )
 
 func fakeClientBuilder(ctx context.Context) func([]byte, client.Options) (client.WithWatch, error) {
@@ -75,11 +128,11 @@ func fakeClientBuilder(ctx context.Context) func([]byte, client.Options) (client
 	}
 }
 
-func newTestClient(ctx context.Context, config string, watchCancel func()) *remoteClient {
+func newTestClient(ctx context.Context, config *rest.Config, watchCancel func()) *remoteClient {
 	b := getClientBuilder(ctx)
 	localClient := b.Build()
 	ret := &remoteClient{
-		kubeconfig:  []byte(config),
+		restConfig:  config,
 		localClient: localClient,
 		watchCancel: watchCancel,
 
@@ -183,7 +236,7 @@ func TestUpdateConfig(t *testing.T) {
 				makeTestSecret("worker1", testKubeconfig("worker1")),
 			},
 			remoteClients: map[string]*remoteClient{
-				"worker1": newTestClient(ctx, "worker1 old kubeconfig", cancelCalled),
+				"worker1": newTestClient(ctx, &rest.Config{Host: "worker1 old kubeconfig"}, cancelCalled),
 			},
 			wantClusters: []kueue.MultiKueueCluster{
 				*utiltestingapi.MakeMultiKueueCluster("worker1").
@@ -203,7 +256,7 @@ func TestUpdateConfig(t *testing.T) {
 			reconcileFor: "worker1",
 			clusters: []kueue.MultiKueueCluster{
 				*utiltestingapi.MakeMultiKueueCluster("worker1").
-					KubeConfig(kueue.PathLocationType, validKubeconfigLocation).
+					KubeConfig(kueue.PathLocationType, "testdata/kubeconfig").
 					Generation(1).
 					Obj(),
 			},
@@ -236,7 +289,7 @@ func TestUpdateConfig(t *testing.T) {
 				makeTestSecret("worker1", testKubeconfig("invalid")),
 			},
 			remoteClients: map[string]*remoteClient{
-				"worker1": newTestClient(ctx, "worker1 old kubeconfig", cancelCalled),
+				"worker1": newTestClient(ctx, &rest.Config{Host: "worker1 old kubeconfig"}, cancelCalled),
 			},
 			wantRemoteClients: map[string]*remoteClient{
 				"worker1": newTestClient(ctx, testKubeconfig("invalid"), nil),
@@ -259,7 +312,7 @@ func TestUpdateConfig(t *testing.T) {
 					Obj(),
 			},
 			remoteClients: map[string]*remoteClient{
-				"worker1": newTestClient(ctx, "worker1 old kubeconfig", cancelCalled),
+				"worker1": newTestClient(ctx, &rest.Config{Host: "worker1 old kubeconfig"}, cancelCalled),
 			},
 			wantClusters: []kueue.MultiKueueCluster{
 				*utiltestingapi.MakeMultiKueueCluster("worker1").
@@ -278,9 +331,12 @@ func TestUpdateConfig(t *testing.T) {
 					Generation(1).
 					Obj(),
 			},
+			secrets: []corev1.Secret{
+				makeTestSecret("worker1", validKubeconfig),
+			},
 			remoteClients: map[string]*remoteClient{
-				"worker1": newTestClient(ctx, "worker1 kubeconfig", cancelCalled),
-				"worker2": newTestClient(ctx, "worker2 kubeconfig", cancelCalled),
+				"worker1": newTestClient(ctx, &rest.Config{Host: "https://kubernetes.default.svc"}, cancelCalled),
+				"worker2": newTestClient(ctx, &rest.Config{Host: "https://kubernetes.default.svc"}, cancelCalled),
 			},
 			wantClusters: []kueue.MultiKueueCluster{
 				*utiltestingapi.MakeMultiKueueCluster("worker1").
@@ -290,7 +346,7 @@ func TestUpdateConfig(t *testing.T) {
 			},
 			wantRemoteClients: map[string]*remoteClient{
 				"worker1": {
-					kubeconfig: []byte("worker1 kubeconfig"),
+					restConfig: &rest.Config{Host: "https://kubernetes.default.svc"},
 				},
 			},
 			wantCancelCalled: 1,
@@ -307,7 +363,7 @@ func TestUpdateConfig(t *testing.T) {
 				makeTestSecret("worker1", testKubeconfig("nowatch")),
 			},
 			remoteClients: map[string]*remoteClient{
-				"worker1": newTestClient(ctx, "worker1 old kubeconfig", cancelCalled),
+				"worker1": newTestClient(ctx, &rest.Config{Host: "worker1 old kubeconfig"}, cancelCalled),
 			},
 			wantRemoteClients: map[string]*remoteClient{
 				"worker1": setReconnectState(newTestClient(ctx, testKubeconfig("nowatch"), nil), 1),
@@ -390,7 +446,7 @@ func TestUpdateConfig(t *testing.T) {
 				makeTestSecret("worker1", testKubeconfig("invalid")),
 			},
 			remoteClients: map[string]*remoteClient{
-				"worker1": setReconnectState(newTestClient(ctx, "nowatch", cancelCalled), 5),
+				"worker1": setReconnectState(newTestClient(ctx, &rest.Config{Host: "nowatch"}, cancelCalled), 5),
 			},
 			wantRemoteClients: map[string]*remoteClient{
 				"worker1": newTestClient(ctx, testKubeconfig("invalid"), nil),
@@ -461,7 +517,7 @@ func TestUpdateConfig(t *testing.T) {
 			c := builder.Build()
 
 			adapters, _ := jobframework.GetMultiKueueAdapters(sets.New("batch/job"))
-			reconciler := newClustersReconciler(c, TestNamespace, 0, defaultOrigin, nil, adapters)
+			reconciler := newClustersReconciler(c, TestNamespace, 0, defaultOrigin, nil, adapters, nil)
 
 			reconciler.rootContext = ctx
 
@@ -518,7 +574,10 @@ func TestUpdateConfig(t *testing.T) {
 					if a.failedConnAttempts != b.failedConnAttempts {
 						return false
 					}
-					return string(a.kubeconfig) == string(b.kubeconfig)
+					if a.restConfig == nil || b.restConfig == nil {
+						return a.restConfig == b.restConfig
+					}
+					return a.restConfig.Host == b.restConfig.Host
 				})); diff != "" {
 				t.Errorf("unexpected controllers (-want/+got):\n%s", diff)
 			}

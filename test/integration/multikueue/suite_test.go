@@ -30,10 +30,12 @@ import (
 	versionutil "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
+	inventoryv1alpha1 "sigs.k8s.io/cluster-inventory-api/apis/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	config "sigs.k8s.io/kueue/apis/config/v1beta2"
+	kueue "sigs.k8s.io/kueue/apis/kueue/v1beta1"
 	qcache "sigs.k8s.io/kueue/pkg/cache/queue"
 	schdcache "sigs.k8s.io/kueue/pkg/cache/scheduler"
 	"sigs.k8s.io/kueue/pkg/constants"
@@ -82,6 +84,7 @@ var (
 	worker1TestCluster      cluster
 	worker2TestCluster      cluster
 	managersConfigNamespace *corev1.Namespace
+	managerMultiKueueConfig *kueue.MultiKueueConfig
 
 	// makes sure there is only one fwk.Init and setupClient at the same time
 	// since these functions are not thread safe due to adding to the common
@@ -107,6 +110,7 @@ func createCluster(setupFnc framework.ManagerSetup, apiFeatureGates ...string) c
 			util.MpiOperatorCrds,
 			util.RayOperatorCrds,
 			util.AppWrapperCrds,
+			util.ClusterProfileCrds,
 			util.KfTrainerCrds,
 		},
 		APIServerFeatureGates: apiFeatureGates,
@@ -317,6 +321,9 @@ func managerSetup(ctx context.Context, mgr manager.Manager) {
 	err = workloadaw.SetupAppWrapperWebhook(mgr, jobframework.WithCache(cCache), jobframework.WithQueues(queues))
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
+	err = inventoryv1alpha1.AddToScheme(mgr.GetScheme())
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
 	err = workloadtrainjob.SetupIndexes(ctx, mgr.GetFieldIndexer())
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
@@ -354,6 +361,9 @@ func managerAndMultiKueueSetup(
 		multikueue.WithEventsBatchPeriod(100*time.Millisecond),
 		multikueue.WithAdapters(adapters),
 		multikueue.WithDispatcherName(dispatcherName),
+		multikueue.WithClusterProfiles(&config.ClusterProfiles{
+			Enable: ptr.To(true),
+		}),
 	)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 

@@ -223,6 +223,7 @@ rules:
   - clusterqueues
   - cohorts
   - localqueues
+  - multikueueclusters
   - workloads
   verbs:
   - create
@@ -259,7 +260,6 @@ rules:
 - apiGroups:
   - kueue.x-k8s.io
   resources:
-  - multikueueclusters
   - multikueueconfigs
   - provisioningrequestconfigs
   - workloadpriorityclasses
@@ -290,6 +290,14 @@ rules:
   - leaderworkerset.x-k8s.io
   resources:
   - leaderworkersets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - multicluster.x-k8s.io
+  resources:
+  - clusterprofiles
   verbs:
   - get
   - list

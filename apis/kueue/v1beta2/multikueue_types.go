@@ -58,9 +58,24 @@ type KubeConfig struct {
 	LocationType LocationType `json:"locationType"`
 }
 
+type ClusterProfile struct {
+	// Name of the ClusterProfile.
+	Name string `json:"name"`
+
+	// Namespace of the ClusterProfile.
+	Namespace string `json:"namespace"`
+}
+
+// +kubebuilder:validation:ExactlyOneOf=kubeConfig;clusterProfile
+
 type MultiKueueClusterSpec struct {
 	// kubeConfig is information on how to connect to the cluster.
-	KubeConfig KubeConfig `json:"kubeConfig"`
+	// +optional
+	KubeConfig KubeConfig `json:"kubeConfig,omitempty"`
+
+	// clusterProfile is the ClusterProfile to use to connect to the cluster.
+	// +optional
+	ClusterProfile ClusterProfile `json:"clusterProfile,omitempty"`
 }
 
 type MultiKueueClusterStatus struct {

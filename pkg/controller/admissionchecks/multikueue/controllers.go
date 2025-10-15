@@ -40,6 +40,7 @@ type SetupOptions struct {
 	eventsBatchPeriod time.Duration
 	adapters          map[string]jobframework.MultiKueueAdapter
 	dispatcherName    string
+	clusterProfiles   *configapi.ClusterProfiles
 }
 
 type SetupOption func(o *SetupOptions)
@@ -90,6 +91,12 @@ func WithDispatcherName(dispatcherName string) SetupOption {
 	}
 }
 
+func WithClusterProfiles(clusterProfiles *configapi.ClusterProfiles) SetupOption {
+	return func(o *SetupOptions) {
+		o.clusterProfiles = clusterProfiles
+	}
+}
+
 func SetupControllers(mgr ctrl.Manager, namespace string, opts ...SetupOption) error {
 	options := &SetupOptions{
 		gcInterval:        defaultGCInterval,
@@ -115,7 +122,15 @@ func SetupControllers(mgr ctrl.Manager, namespace string, opts ...SetupOption) e
 		return err
 	}
 
-	cRec := newClustersReconciler(mgr.GetClient(), namespace, options.gcInterval, options.origin, fsWatcher, options.adapters)
+	if options.clusterProfiles != nil && options.clusterProfiles.Enable != nil && *options.clusterProfiles.Enable {
+		cpRec := NewClusterProfileReconciler(mgr.GetClient(), mgr.GetScheme())
+		err = cpRec.SetupWithManager(mgr)
+		if err != nil {
+			return err
+		}
+	}
+
+	cRec := newClustersReconciler(mgr.GetClient(), namespace, options.gcInterval, options.origin, fsWatcher, options.adapters, options.clusterProfiles)
 	err = cRec.setupWithManager(mgr)
 	if err != nil {
 		return err
